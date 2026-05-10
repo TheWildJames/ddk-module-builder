@@ -29,6 +29,9 @@ jobs:
       options: --privileged
 
     steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
     - name: Build 
       run: |
         BRANCH=${{ inputs.branch }}
