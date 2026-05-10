@@ -7,7 +7,7 @@ on:
       branch:
         description: 'Kernel branch (e.g., android16-6.12, android15-6.6)'
         required: true
-        default: 'android16-6.12'
+        default: 'android13-5.15'
       ddk_version:
         description: 'DDK version (default: 20260313)'
         required: false
@@ -32,7 +32,7 @@ jobs:
     - name: Build 
       run: |
         BRANCH=${{ inputs.branch }}
-        MODULE_PATH=${{ inputs.module_path }}
+        MODULE_PATH_RAW=${{ inputs.module_path }}
         CONFIGS="${{ inputs.configs }}"
         cat <<-EOF > info.txt
         BRANCH=$BRANCH
@@ -62,7 +62,15 @@ jobs:
         fi
         make -C $SRC O=$OUT olddefconfig
         make -C $SRC O=$OUT modules_prepare
-        make -C $SRC O=$OUT M=$SRC/$MODULE_PATH modules modules_install INSTALL_MOD_PATH=$MODS
+
+        # Determine module path: allow an absolute repo path or a path relative to the kernel src
+        if [[ "$MODULE_PATH_RAW" = /* || "$MODULE_PATH_RAW" = ./* ]]; then
+          MODULE_PATH="$MODULE_PATH_RAW"
+        else
+          MODULE_PATH="$SRC/$MODULE_PATH_RAW"
+        fi
+
+        make -C $SRC O=$OUT M="$MODULE_PATH" modules modules_install INSTALL_MOD_PATH=$MODS
 
     - name: Prepare Artifacts
       run: |
